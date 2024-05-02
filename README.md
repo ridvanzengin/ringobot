@@ -1,2 +1,1 @@
-# rigobot
 # ringobot

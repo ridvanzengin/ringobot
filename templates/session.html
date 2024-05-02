@@ -1,0 +1,171 @@
+
+{% extends "layout-farm.html" %}
+<title> {{title}}</title>
+
+{% block content %}
+
+
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.15.5/bootstrap-table.min.css" rel="stylesheet">
+
+
+<!-- Graph Section -->
+
+<div class="row" id="graph" style="width:100%;"></div>
+
+<!-- Table Section -->
+
+<div class="row">
+      <div class="w3-white w3-text-grey w3-card-4">
+      <div class="w3-container">
+      <table id="table"
+        data-toggle="table"
+        data-pagination="false"
+        data-pagination-h-align="left"
+        data-pagination-detail-h-align="right"
+        data-page-size="20"
+        data-page-list="[10, 25, 50, 100, all]"
+        data-maintain-meta-data="true"
+        data-search="false"
+        data-filter-control="true"
+        data-show-export="true"
+        data-click-to-select="true"
+        data-toolbar="#toolbar"
+        data-show-refresh="false"
+        class="table">
+        <thead>
+            <tr>
+                <th data-field="id"   data-sortable="true" data-formatter="sessionIdFormatter">ID</th>
+                <th data-field="coin_id"   data-sortable="true" data-visible="false" >CoinId</th>
+                <th data-field="name"   data-sortable="true" data-formatter="sessionIdFormatter">Coin</th>
+                <th data-field="profit_percent"   data-sortable="true" data-formatter="profitPercentFormatter">Profit %</th>
+                <th data-field="buy_price"   data-sortable="true" data-formatter="USDFormatter">BuyPrice</th>
+                <th data-field="sell_price"   data-sortable="true" data-formatter="USDFormatter">Sell/LivePrice</th>
+                <th data-field="quantity"   data-sortable="true" >Quantity</th>
+                <th data-field="buy_timestamp"   data-sortable="true" data-visible="false">BuyTimestamp</th>
+                <th data-field="buy_time"   data-sortable="true">BuyTime</th>
+                <th data-field="sell_time"   data-sortable="true">SellTime</th>
+                <th data-field="profit"   data-sortable="true" data-formatter="profitFormatter">Profit $</th>
+                <th data-field="status"   data-sortable="true" data-visible="false">Status</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+        </table>
+        </div>
+    </div>
+ </div>
+
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.15.5/bootstrap-table.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.15.5/locale/bootstrap-table-en-US.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.15.5/extensions/filter-control/bootstrap-table-filter-control.min.js"></script>
+
+
+<!-- D3.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
+<!-- Plotly.js -->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+<script type="text/javascript">
+  var graph = {{session.graph|safe}};
+    Plotly.plot("graph", graph.data, graph.layout);
+
+
+var coin_id = {{session.coin_id}};
+$("#table").bootstrapTable({
+    url: '/get_sessions_by_coin_id/' + coin_id,
+    sortName: 'id', // Set the initial sorting column to 'id'
+    sortOrder: 'desc', // Set the initial sorting order to descending
+
+    // Custom row formatting based on session status and profit status
+    rowStyle: function(row, index) {
+        if (row.status === 1) {
+            if (row.is_profit === 1) {
+                // Apply styles for active sessions with profit
+                return {
+                    classes: 'active-profit-session-row'
+                };
+            } else if (row.is_profit === 0) {
+                // Apply styles for active sessions with loss
+                return {
+                    classes: 'active-loss-session-row'
+                };
+            }
+        } else if (row.status === 0) {
+            // Apply styles for completed sessions
+            return {
+                classes: 'completed-session-row'
+            };
+        } else {
+            // No custom styling for other statuses
+            return {};
+        }
+    }
+});
+
+
+
+  function tableFilter(filter) {
+    $("#table").bootstrapTable('filterBy', {
+      ...filter
+    });
+  }
+
+  function sessionIdFormatter (value, row) {
+    return `<b><a href="/transactions/${row.id}">${value}</a></b>`;
+  }
+
+
+
+function profitFormatter(value, row) {
+  let statusHtml = "";
+
+  if (row["is_profit"] === 0) {
+    statusHtml += `<button class='btn btn-danger'>${parseFloat(row["profit"]).toFixed(2)} $</button> `;
+  }
+  if (row["is_profit"] === 1) {
+    statusHtml += `<button class='btn btn-success'>${parseFloat(row["profit"]).toFixed(2)} $</button> `;
+  }
+
+  return statusHtml;
+}
+
+function profitPercentFormatter(value, row) {
+  let statusHtml = "";
+
+  if (row["is_profit"] === 0) {
+    statusHtml += `<button class='btn btn-danger'>${parseFloat(row["profit_percent"]).toFixed(2)} %</button> `;
+  }
+  if (row["is_profit"] === 1) {
+    statusHtml += `<button class='btn btn-success'>${parseFloat(row["profit_percent"]).toFixed(2)} %</button> `;
+  }
+
+  return statusHtml;
+}
+
+
+
+function USDFormatter(value, row) {
+  return  value + " $";
+}
+</script>
+
+
+
+
+</script>
+
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.15.5/bootstrap-table.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.15.5/locale/bootstrap-table-en-US.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.15.5/extensions/filter-control/bootstrap-table-filter-control.min.js"></script>
+
+{% endblock content %}
+

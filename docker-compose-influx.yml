@@ -1,0 +1,23 @@
+version: "3.3"
+services:
+    influxdb_cli:
+        links:
+            - influxdb
+        image: influxdb:2.1.1
+        entrypoint: influx setup --bucket main -t gsofpwopdfgr0342fj54fg24u4 -o ringobot --username=admin --password=gsofpwopdfgr0342fj54fg24u4 --host=http://influxdb:8086 -f
+        restart: on-failure:10
+        depends_on:
+            - influxdb
+    influxdb:
+        image: influxdb:2.1.1
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "100m"
+        volumes:
+      # Mount for influxdb data directory and configuration
+            - /coinDB/data:/var/lib/influxdb2:rw
+        ports:
+            - "8086:8086"
+volumes:
+    data:

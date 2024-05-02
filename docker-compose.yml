@@ -1,0 +1,20 @@
+version: "3.3"
+services:
+    webapp:
+        image: ${REGISTRY}webapp:${WCD_VERSION}
+        restart: always
+        build:
+            context: .
+            dockerfile: .docker/webapp.Dockerfile
+        ports:
+            - 5156:5156
+    money:
+        image: ${REGISTRY}money:${WCD_VERSION}
+        restart: always
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "100m"
+        build:
+            context: .
+            dockerfile: .docker/money.Dockerfile

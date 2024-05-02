@@ -1,0 +1,32 @@
+.animal{
+  width: 130px; height: 200px;
+  background: linear-gradient(180deg, #629F26 0%, #146C3C 100%);
+  border: 3px solid #FFFFFF;
+  border-radius: 16px;
+  margin-left: 5px; margin-bottom: 5px;
+  text-decoration: none;
+  color: white;
+  
+}
+
+a.animal:hover {
+  color: white;
+  text-decoration: none;
+}
+
+.device{
+  width: 160px; height: 160px;
+  background: linear-gradient(180deg, #50504f 0%, #909190 100%);
+  border: 3px solid #FFFFFF;
+  border-radius: 16px;
+  margin-left: 5px; margin-bottom: 5px;
+  text-decoration: none;
+  color: white;
+
+}
+
+a.device:hover {
+  color: white;
+  text-decoration: none;
+}
+

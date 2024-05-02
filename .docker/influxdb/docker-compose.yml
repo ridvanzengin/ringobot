@@ -1,0 +1,22 @@
+version: '3.3'
+services:
+  influxdb:
+    image: influxdb:2.1.1
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+    volumes:
+      - /home/ubuntu/data:/var/lib/influxdb2:rw
+    ports:
+      - "8086:8086"
+  influxdb_cli:
+    links:
+      - influxdb
+    image: influxdb:2.1.1
+    entrypoint: ["/bin/sh", "/setup-influx.sh"]
+    restart: on-failure:10
+    depends_on:
+      - influxdb
+    volumes:
+      - ./setup-influx.sh:/setup-influx.sh:ro

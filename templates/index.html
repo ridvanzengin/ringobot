@@ -86,12 +86,13 @@
                 <th data-field="name" data-filter-control="input" data-sortable="true" data-formatter="sessionIdFormatter">Coin</th>
                 <th data-field="profit_percent" data-filter-control="input" data-sortable="true" data-formatter="profitPercentFormatter">Profit %</th>
                 <th data-field="buy_price" data-filter-control="input" data-sortable="true" data-formatter="USDFormatter">BuyPrice</th>
-                <th data-field="sell_price" data-filter-control="input" data-sortable="true" data-formatter="USDFormatter">Sell/LivePrice</th>
+                <th data-field="sell_price" data-filter-control="input" data-sortable="true" data-formatter="USDFormatter">LivePrice</th>
                 <th data-field="quantity" data-filter-control="input" data-sortable="true" >Quantity</th>
                 <th data-field="buy_timestamp" data-filter-control="input" data-sortable="true" data-visible="false">BuyTimestamp</th>
                 <th data-field="buy_time" data-filter-control="input" data-sortable="true">BuyTime</th>
                 <th data-field="sell_time" data-filter-control="input" data-sortable="true">SellTime</th>
                 <th data-field="profit" data-filter-control="input" data-sortable="true" data-formatter="profitFormatter">Profit $</th>
+                <th data-field="action" data-filter-control="input" data-sortable="true" data-formatter="sellFormatter">Action</th>
                 <th data-field="status" data-filter-control="input" data-sortable="true" data-visible="false">Status</th>
             </tr>
         </thead>
@@ -100,6 +101,7 @@
         </div>
     </div>
  </div>
+</div>
 </div>
 </div>
 </div>
@@ -115,7 +117,7 @@
 <script>
 $("#table").bootstrapTable({
     url: '/get_active_sessions',
-    sortName: 'profit_percent',
+    sortName: 'buy_timestamp',
     sortOrder: 'desc',
 
     // Custom row formatting based on session status and profit status
@@ -145,6 +147,14 @@ $("#table").bootstrapTable({
 });
 
 
+function confirmSell(session_id) {
+    if (confirm("Are you sure you want to sell this session?")) {
+        window.location.href = `/manual_sell/${session_id}`;
+    } else {
+        // Do nothing or provide feedback to the user
+    }
+}
+
 
   function tableFilter(filter) {
     $("#table").bootstrapTable('filterBy', {
@@ -169,6 +179,20 @@ function profitFormatter(value, row) {
   }
 
   return statusHtml;
+}
+
+function sellFormatter(value, row) {
+    let statusHtml = "";
+    let session_id = row["id"];
+
+    if (row["is_profit"] === 0) {
+        statusHtml += `<a href="#" onclick="confirmSell(${session_id})" class='btn btn-danger'>Sell</a> `;
+    }
+    if (row["is_profit"] === 1) {
+        statusHtml += `<a href="#" onclick="confirmSell(${session_id})" class='btn btn-success'>Sell</a> `;
+    }
+
+    return statusHtml;
 }
 
 function profitPercentFormatter(value, row) {

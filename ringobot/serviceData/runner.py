@@ -71,7 +71,8 @@ def expire_sell(db_session, active_sessions, config):
     for session in active_sessions:
         symbol = session.name
         try:
-            if int(time.time()) - session.buy_timestamp > timeout:
+            is_profit = session.profit_percent > 0
+            if int(time.time()) - session.buy_timestamp > timeout and is_profit:
                 price = binanceApi.get_symbol_ticker(symbol)
                 #quantity = session.quantity
                 asset_balance = binanceApi.get_account_balance()[symbol.replace("USDT", "")]  # Get the asset balance
@@ -129,7 +130,7 @@ def buy_crypto(buys, config, db_session):
             pass
 
 
-def sell_crypto(sells, config, db_session):
+def sell_crypto(sells, config, db_session, min_hold_time=3):  # Minimum hold time in hours
     if not sells:
         return
     allow_sell = config.allow_sell
@@ -137,7 +138,9 @@ def sell_crypto(sells, config, db_session):
         return
     active_sessions = Session.get_active_sessions(db_session)
     for session in active_sessions:
-        if session.name in sells:
+        is_profit = session.profit_percent > 0
+        is_min_hold_time_over = int(time.time()) - session.buy_timestamp > min_hold_time * 3600
+        if session.name in sells and is_profit and is_min_hold_time_over:
             symbol = session.name
             price = binanceApi.get_symbol_ticker(symbol)
             quantity = session.quantity
@@ -151,6 +154,20 @@ def sell_crypto(sells, config, db_session):
                 logging.error(e)
         else:
             pass
+
+
+def manual_cripto_sell(db_session, session_id):
+    session = Session.get_session_by_id(db_session, session_id)
+    symbol = session.name
+    price = binanceApi.get_symbol_ticker(symbol)
+    quantity = session.quantity
+    try:
+        order = binanceApi.place_market_sell_order(symbol, quantity=quantity)
+        update_transaction(db_session, session, price)
+        logging.info(f"Manual sell order placed for {symbol} at price {price}")
+    except Exception as e:
+        logging.error(f"{symbol} manual sell order failed")
+        logging.error(e)
 
 
 def trade(db_session):

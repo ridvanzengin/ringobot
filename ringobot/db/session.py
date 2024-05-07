@@ -2,7 +2,7 @@
 import time
 from ringobot.db.utils import execute_query
 from ringobot.serviceData.simulation import get_symbol_data
-from datetime import datetime
+from datetime import datetime, timedelta
 from ringobot.serviceData.binance import BinanceAPI
 from ringobot.serviceData.graphCreator import createGraphs
 import json
@@ -17,14 +17,16 @@ class Session:
         self.buy_price = round(float(buy_price), 5)
         self.quantity = float(quantity)
         self.buy_timestamp = int(buy_timestamp)
-        self.buy_time = datetime.fromtimestamp(self.buy_timestamp).strftime('%Y-%m-%d %H:%M')
+        self.buy_time_offset = datetime.fromtimestamp(self.buy_timestamp) + timedelta(hours=3)
+        self.buy_time = self.buy_time_offset.strftime('%Y-%m-%d %H:%M')
         self.status = int(status)
         if self.status == 1:
             self.live_price = BinanceAPI().get_symbol_ticker(self.name)
 
         self.sell_price = round(float(sell_price), 5) if sell_price else self.live_price
         self.sell_timestamp = int(sell_timestamp) if sell_timestamp else None
-        self.sell_time = datetime.fromtimestamp(self.sell_timestamp).strftime('%Y-%m-%d %H:%M') if sell_timestamp else None
+        self.sell_time_offset = datetime.fromtimestamp(self.sell_timestamp) + timedelta(hours=3) if sell_timestamp else None
+        self.sell_time = self.sell_time_offset.strftime('%Y-%m-%d %H:%M') if sell_timestamp else None
         if self.status == 0:
             self.profit = round((self.sell_price - self.buy_price) * self.quantity, 2)
             self.profit_percent = round((self.profit / (self.buy_price * self.quantity)) * 100, 2)
@@ -68,7 +70,7 @@ class Session:
 
     @staticmethod
     def get_session_by_id(db_session, session_id):
-        return Session.get_sessions(db_session, session_id=session_id)
+        return Session.get_sessions(db_session, session_id=session_id)[0]
 
     @staticmethod
     def get_session_by_coin_id(db_session, coin_id):

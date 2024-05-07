@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, make_response
+from ringobot.serviceData.runner import manual_cripto_sell
 from ringobot.db.session import Dashboard, Session, LiveDashboard
 from ringobot.db.configurations import Configurations
 from ringobot.db.utils import session_scope
@@ -114,6 +115,14 @@ def get_sessions_by_coin_id(coin_id):
         sessions = Session.get_session_by_coin_id(db_session, coin_id)
         serialized_sessions = [session.__dict__ for session in sessions]
         return jsonify(serialized_sessions), 200
+
+
+@app.route('/manual_sell/<int:session_id>')
+@login_required
+def manual_sell(session_id):
+    with session_scope() as db_session:
+        manual_cripto_sell(db_session, session_id)
+        return redirect(url_for('home'))
 
 
 @app.route('/config', methods=['GET', 'POST'])

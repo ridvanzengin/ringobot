@@ -107,5 +107,58 @@ def calculate_vwma(data, windows=[4, 24, 96]):
     return data
 
 
+def calculate_price_diff(data, windows=[1, 3, 7]):  # days
+    """
+    This function calculates the price difference for different window sizes.
+    It
+    """
 
+    data["windowId"] = data.index.hour
+    data["windowId"] = data["windowId"].astype(int)
+    for window in windows:
+        shifted_mean = data.groupby("windowId")["close"].transform(
+            lambda grp: grp.shift(1, "d").rolling(window=f'{window}d').mean())
+        data[f"priceDiff{window}d"] = data["close"] - shifted_mean
+    data = data.drop("windowId", axis=1)
+    data["priceDiffTrendPercent"] = data[[f"priceDiff{window}d" for window in windows]].rolling(window=12).mean().mean(axis=1) / data["close"]
+    return data
+
+
+def label_data(df, future_period=3, threshold=0.02, trend_threshold=0, train=False):
+    """
+    Function to label the data based on the future price movement and trend percentage
+    :param df: DataFrame with the price data
+    :param future_period: Future period for the price change calculation
+    :param threshold: Threshold for the price change
+    :param trend_threshold: Threshold for the trend percentage
+    :param train: Boolean flag indicating whether to drop NaN values for training data
+    :return: DataFrame with the labels
+    """
+    # Calculate the future price change
+    df['future_price'] = df['close'].shift(-future_period)
+    df['price_change'] = df['future_price'] - df['close']
+    df['price_change_pct'] = df['price_change'] / df['close']
+
+    # Label the data based on the price change and trend percentage
+    df['label'] = 0
+    df.loc[(df['price_change_pct'] > threshold) & (df['priceDiffTrendPercent'] > trend_threshold), 'label'] = 1
+    df.loc[(df['price_change_pct'] < -threshold) & (df['priceDiffTrendPercent'] < -trend_threshold), 'label'] = -1
+
+    if train:
+        df.dropna(inplace=True)
+
+    labels = df['label'].values
+    df.drop(['future_price', 'price_change', 'price_change_pct', 'label', 'priceDiffTrendPercent'], axis=1, inplace=True)
+    if "symbol" in df.columns:
+        df.drop("symbol", axis=1, inplace=True)
+
+    return df, labels
+
+
+def sliding_window(df, window_size):
+    windows = []
+    for i in range(len(df) - window_size):
+        window = df.iloc[i:i + window_size].values
+        windows.append(window)
+    return np.array(windows)
 

@@ -10,14 +10,14 @@ import matplotlib.pyplot as plt
 from ringobot.serviceData.train.preprocess import under_sample_data, over_sample_data
 
 # Load the data
-X_train = np.load("data/class-window24-threshold0.02-future3/X_train.npy")
-X_test = np.load("data/class-window24-threshold0.02-future3/X_test.npy")
-y_train = np.load("data/class-window24-threshold0.02-future3/y_train.npy")
-y_test = np.load("data/class-window24-threshold0.02-future3/y_test.npy")
+X_train = np.load("data/class20240508-window24/X_train.npy")
+X_test = np.load("data/class20240508-window24/X_test.npy")
+y_train = np.load("data/class20240508-window24/y_train.npy")
+y_test = np.load("data/class20240508-window24/y_test.npy")
 
 
 # Balance the data
-X_train, y_train = over_sample_data(X_train, y_train)
+X_train, y_train = under_sample_data(X_train, y_train)
 
 # print class distribution
 print("Class Distribution train data")
@@ -93,9 +93,10 @@ plt.ylabel('True Labels')
 plt.title('Confusion Matrix')
 plt.show()
 
+test_name_date = "20240507"
 # Save the model
-lgbm_model.booster_.save_model("ringobot/serviceData/train/models/lgbm_classifier.txt")
-catboost_model.save_model("ringobot/serviceData/train/models/catboost_classifier.cbm")
+lgbm_model.booster_.save_model(f"ringobot/serviceData/train/models/{test_name_date}_lgbm_classifier.txt")
+catboost_model.save_model(f"ringobot/serviceData/train/models/{test_name_date}_catboost_classifier.cbm")
 
 
 
@@ -147,4 +148,7 @@ confusion_matrix:
 array([[  4825,   8895,   4141],
        [ 25321, 254908,  23889],
        [  4809,   9292,   4749]])
+       
+       
+
 """

@@ -8,7 +8,7 @@ pd.set_option('display.max_columns', None)
 
 symbols = [
     "BTCUSDT", "ETHUSDT", "XRPUSDT", "BCHUSDT", "LTCUSDT",
-    "ADAUSDT", "BNBUSDT", "USDCUSDT", "DOTUSDT",
+    "ADAUSDT", "BNBUSDT", "DOTUSDT",
     "SOLUSDT", "DOGEUSDT", "UNIUSDT", "WBTCUSDT",
     "XLMUSDT", "LINKUSDT", "AAVEUSDT", "VETUSDT", "THETAUSDT",
     "ALGOUSDT", "ATOMUSDT", "FILUSDT", "KSMUSDT",

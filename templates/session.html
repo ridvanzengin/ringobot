@@ -36,7 +36,7 @@
         class="table">
         <thead>
             <tr>
-                <th data-field="id"   data-sortable="true" data-formatter="sessionIdFormatter">ID</th>
+                <th data-field="id"   data-sortable="true" data-formatter="IdFormatter">ID</th>
                 <th data-field="coin_id"   data-sortable="true" data-visible="false" >CoinId</th>
                 <th data-field="name"   data-sortable="true" data-formatter="sessionIdFormatter">Coin</th>
                 <th data-field="profit_percent"   data-sortable="true" data-formatter="profitPercentFormatter">Profit %</th>
@@ -116,10 +116,12 @@ $("#table").bootstrapTable({
   }
 
   function sessionIdFormatter (value, row) {
-    return `<b><a href="/transactions/${row.id}">${value}</a></b>`;
+    return `<b><a href="/transactions/${row.id}/1h">${value}</a></b>`;
   }
 
-
+  function IdFormatter (value, row) {
+    return `<b><a href="/transactions/${row.id}/1d">${value}</a></b>`;
+  }
 
 function profitFormatter(value, row) {
   let statusHtml = "";

@@ -85,8 +85,8 @@ class Session:
         return Session.get_sessions(db_session, last_n_hours=0.5)
 
     @staticmethod
-    def get_session_data(session):
-        session.data = get_symbol_data(session.name, "15m", limit=240)
+    def get_session_data(session, data_interval="15m"):
+        session.data = get_symbol_data(session.name, data_interval, limit=240)
         return session
 
     @staticmethod
@@ -98,9 +98,9 @@ class Session:
         return session
 
     @staticmethod
-    def get_session_details(db_session, session_id):
-        session = Session.get_session_by_id(db_session, session_id)[0]
-        session = Session.get_session_data(session)
+    def get_session_details(db_session, session_id, data_interval):
+        session = Session.get_session_by_id(db_session, session_id)
+        session = Session.get_session_data(session, data_interval)
         session = Session.get_symbol_graph(session)
         return session
 

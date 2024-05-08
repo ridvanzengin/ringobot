@@ -99,12 +99,12 @@ def get_completed_sessions():
         return jsonify(serialized_sessions), 200
 
 
-@app.route('/transactions/<int:session_id>')
+@app.route('/transactions/<int:session_id>/<string:data_interval>')
 @login_required
-def transactions(session_id):
+def transactions(session_id, data_interval):
     with session_scope() as db_session:
-        session = Session.get_session_details(db_session, session_id)
-        return render_template('session.html', session=session, coin_id=session.coin_id)
+        session = Session.get_session_details(db_session, session_id, data_interval)
+        return render_template('session.html', session=session, coin_id=session.coin_id, title=session.name)
 
 
 

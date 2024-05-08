@@ -6,19 +6,6 @@ from ringobot.serviceData.calculateBuySellSignals import *
 from tqdm import tqdm
 pd.set_option('display.max_columns', None)
 
-symbols = [
-    "BTCUSDT", "ETHUSDT", "XRPUSDT", "BCHUSDT", "LTCUSDT",
-    "ADAUSDT", "BNBUSDT", "DOTUSDT",
-    "SOLUSDT", "DOGEUSDT", "UNIUSDT", "WBTCUSDT",
-    "XLMUSDT", "LINKUSDT", "AAVEUSDT", "VETUSDT", "THETAUSDT",
-    "ALGOUSDT", "ATOMUSDT", "FILUSDT", "KSMUSDT",
-    "EOSUSDT", "TRXUSDT", "XVGUSDT", "ZECUSDT", "MKRUSDT",
-    "BATUSDT", "COMPUSDT", "SUSHIUSDT", "SNXUSDT",
-    "YFIUSDT", "UMAUSDT", "CRVUSDT", "RSRUSDT", "KAVAUSDT",
-    "NMRUSDT", "BANDUSDT", "RENUSDT", "KNCUSDT",
-    "ZILUSDT", "PAXGUSDT", "OMGUSDT", "DASHUSDT", "ZRXUSDT"
-]
-
 
 def import_coin_data(symbol):
     try:

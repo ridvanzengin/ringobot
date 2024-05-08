@@ -1,4 +1,4 @@
-from ringobot.serviceData.bulkDataImport import symbols
+
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import VARCHAR, Integer, Float, Column, ForeignKey
 from ringobot.db.utils import session_scope
@@ -36,7 +36,7 @@ class Config(Base):
     max_trade = Column(Float)
 
 
-if __name__ == "__main__":
+"""if __name__ == "__main__":
     Base.metadata.create_all(engine)
     print("Tables created successfully")
     with session_scope() as db_session:
@@ -44,7 +44,7 @@ if __name__ == "__main__":
             coin = Coins(name=symbol)
             db_session.add(coin)
         db_session.commit()
-        print("Coins added successfully")
+        print("Coins added successfully")"""
 
 
 

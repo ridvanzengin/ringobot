@@ -22,7 +22,7 @@ def to_slack(db_session):
     total_profit = round(sum([sell.profit for sell in recent_sells]), 2)
     color = "danger" if total_profit <= 0 else "good"
     for sell in recent_sells:
-        transaction_link = f"{APP_URL}/transactions/{sell.id}"
+        transaction_link = f"{APP_URL}/transactions/{sell.id}/15m"
         fields.append({
             "value": f"<{transaction_link}|{sell.name}>   :   {sell.profit_percent} %",
             "short": False,

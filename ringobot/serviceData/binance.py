@@ -1,5 +1,6 @@
 from ringobot.config import binance_client, dryRun
 import time
+import pandas as pd
 
 
 class BinanceAPI:
@@ -47,12 +48,19 @@ class BinanceAPI:
                 return False
             time.sleep(1)
 
-    def get_latest_kline_data(self, symbol, interval, limit=1000):
-        # Get the latest N hours of candlestick data (kline data)
-        # Interval options: 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 8h, 12h, 1d, 3d, 1w, 1M
-        # Limit: Maximum 1000
+    def get_symbol_data(self, symbol, interval, limit=240):
+
+        # Get historical kline data from Binance
         klines = self.client.get_klines(symbol=symbol, interval=interval, limit=limit)
-        return klines
+        # Create a DataFrame from the klines
+        df = pd.DataFrame(klines, columns=["timestamp", "open", "high", "low", "close", "volume", "close_time",
+                                           "quote_asset_volume", "number_of_trades", "taker_buy_base_asset_volume",
+                                           "taker_buy_quote_asset_volume", "ignore"])
+        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+        df = df.set_index('timestamp')
+        df = df.apply(pd.to_numeric)
+        df = df[["close", "volume"]]
+        return df
 
     def get_all_symbols(self):
         # Get all symbols from Binance

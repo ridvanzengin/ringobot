@@ -1,8 +1,7 @@
 from ringobot.serviceData.binance import BinanceAPI
-from ringobot.serviceData.simulation import get_symbol_data, create_signals, predict_signals
-from ringobot.serviceData.bulkDataImport import symbols
+from ringobot.serviceData.simulation import create_signals, predict_signals
 import time
-from ringobot.db.session import Session
+from ringobot.db.session import Session, Coin
 from ringobot.db.configurations import Configurations
 from ringobot.db.tables import Coins, Transactions
 from ringobot.tools import calculate_max_qty, calculate_max_sell_qty
@@ -10,12 +9,12 @@ from ringobot.toChat import send_slack_message, to_slack
 import logging
 
 # Initialize Binance API
-binanceApi = BinanceAPI()
+binance = BinanceAPI()
 
 
 def make_buy_sell_decision(symbol, interval='1h'):
     # Get historical data for a symbol
-    df = get_symbol_data(symbol, interval, limit=240)
+    df = binance.get_symbol_data(symbol, interval, limit=240)
     # Create signals from the data
     windows, _ = create_signals(df)
     # Predict signals using the trained model
@@ -23,9 +22,11 @@ def make_buy_sell_decision(symbol, interval='1h'):
     return probs
 
 
-def detect_buy_sell_signal():
+def detect_buy_sell_signal(db_session):
     buys = []
     sells = []
+    symbols = Coin.get_active_coins(db_session)
+    symbols = [symbol.name for symbol in symbols]
     for symbol in symbols:
         probs = make_buy_sell_decision(symbol)
         if probs[-1] == 1:
@@ -50,11 +51,11 @@ def safety_sell(db_session, active_sessions, config):
     for session in active_sessions:
         symbol = session.name
         try:
-            price = binanceApi.get_symbol_ticker(symbol)
+            price = binance.get_symbol_ticker(symbol)
             quantity = session.quantity
-            df = get_symbol_data(symbol, '1m', limit=5)
+            df = binance.get_symbol_data(symbol, interval='1m', limit=5)
             if df['close'].mean() < session.buy_price * (1 - tolerance):
-                    order = binanceApi.place_market_sell_order(symbol, quantity=quantity)
+                    order = binance.place_market_sell_order(symbol, quantity=quantity)
                     logging.info(f"Safety sell order placed for {symbol} at price {price}")
                     update_transaction(db_session, session, price)
             else:
@@ -73,12 +74,12 @@ def expire_sell(db_session, active_sessions, config):
         try:
             is_profit = session.profit_percent > 0
             if int(time.time()) - session.buy_timestamp > timeout and is_profit:
-                price = binanceApi.get_symbol_ticker(symbol)
+                price = binance.get_symbol_ticker(symbol)
                 #quantity = session.quantity
-                asset_balance = binanceApi.get_account_balance()[symbol.replace("USDT", "")]  # Get the asset balance
-                min_quantity = binanceApi.get_symbol_minQty(symbol)  # Get the minimum quantity for the symbol
+                asset_balance = binance.get_account_balance()[symbol.replace("USDT", "")]  # Get the asset balance
+                min_quantity = binance.get_symbol_minQty(symbol)  # Get the minimum quantity for the symbol
                 quantity = calculate_max_sell_qty(asset_balance, min_quantity)
-                order = binanceApi.place_market_sell_order(symbol, quantity=quantity)
+                order = binance.place_market_sell_order(symbol, quantity=quantity)
                 logging.info(f"Expire sell order placed for {symbol} at price {price}")
                 update_transaction(db_session, session, price)
             else:
@@ -111,16 +112,16 @@ def buy_crypto(buys, config, db_session):
     buys = [symbol for symbol in buys if symbol not in owned_symbols]  # Remove already owned symbols
     allowed_trade_count = max_trade - len(owned_symbols) # Calculate the number of trades allowed
     buys = buys[:allowed_trade_count]  # Limit the number of trades to max_trade
-    cash = binanceApi.get_account_balance()['USDT']
+    cash = binance.get_account_balance()['USDT']
     if cash < budget:
         return
     for symbol in buys:
         if symbol not in owned_symbols:
-            price = binanceApi.get_symbol_ticker(symbol)
-            min_quantity = binanceApi.get_symbol_minQty(symbol)
+            price = binance.get_symbol_ticker(symbol)
+            min_quantity = binance.get_symbol_minQty(symbol)
             quantity = calculate_max_qty(price, budget, min_quantity)
             try:
-                order = binanceApi.place_market_buy_order(symbol, quantity=quantity)
+                order = binance.place_market_buy_order(symbol, quantity=quantity)
                 insert_transaction(db_session, symbol, price, quantity)
                 logging.info(f"Buy order placed for {symbol} at price {price}")
             except Exception as e:
@@ -142,11 +143,11 @@ def sell_crypto(sells, config, db_session, min_hold_time=3):  # Minimum hold tim
         is_min_hold_time_over = int(time.time()) - session.buy_timestamp > min_hold_time * 3600
         if session.name in sells and is_profit and is_min_hold_time_over:
             symbol = session.name
-            price = binanceApi.get_symbol_ticker(symbol)
+            price = binance.get_symbol_ticker(symbol)
             quantity = session.quantity
 
             try:
-                order = binanceApi.place_market_sell_order(symbol, quantity=quantity)
+                order = binance.place_market_sell_order(symbol, quantity=quantity)
                 update_transaction(db_session, session, price)
                 logging.info(f"Sell order placed for {symbol} at price {price}")
             except Exception as e:
@@ -159,10 +160,10 @@ def sell_crypto(sells, config, db_session, min_hold_time=3):  # Minimum hold tim
 def manual_cripto_sell(db_session, session_id):
     session = Session.get_session_by_id(db_session, session_id)
     symbol = session.name
-    price = binanceApi.get_symbol_ticker(symbol)
+    price = binance.get_symbol_ticker(symbol)
     quantity = session.quantity
     try:
-        order = binanceApi.place_market_sell_order(symbol, quantity=quantity)
+        order = binance.place_market_sell_order(symbol, quantity=quantity)
         update_transaction(db_session, session, price)
         logging.info(f"Manual sell order placed for {symbol} at price {price}")
     except Exception as e:
@@ -171,10 +172,12 @@ def manual_cripto_sell(db_session, session_id):
 
 
 def trade(db_session):
-    buys, sells = detect_buy_sell_signal()
+    active_sessions = Session.get_active_sessions(db_session)
     config = Configurations.get_config(db_session)
-    sell_crypto(sells, config, db_session)
-    buy_crypto(buys, config, db_session)
+    if len(active_sessions) < config.max_trade:
+        buys, sells = detect_buy_sell_signal(db_session)
+        sell_crypto(sells, config, db_session)
+        buy_crypto(buys, config, db_session)
 
 
 

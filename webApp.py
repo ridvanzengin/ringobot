@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, make_response
 from ringobot.serviceData.runner import manual_cripto_sell
-from ringobot.db.session import Dashboard, Session, LiveDashboard
+from ringobot.db.session import Dashboard, Session, LiveDashboard, Coin
 from ringobot.db.configurations import Configurations
 from ringobot.db.utils import session_scope
 from ringobot.config import USERNAME, PASSWORD, SECRET_KEY
@@ -144,6 +144,34 @@ def update_config():
         with session_scope() as db_session:
             config = Configurations.get_config(db_session)
         return render_template('config.html', config=config)
+
+
+
+@app.route('/coins')
+@login_required
+def coins():
+        return render_template('coins.html', coins=coins)
+
+
+
+@app.route('/get_coins', methods=['GET', 'POST'])
+@login_required
+def get_coins():
+    with session_scope() as db_session:
+        coins = Coin.get_coins(db_session)
+        serialized_coins = [coin.__dict__ for coin in coins]
+        return jsonify(serialized_coins), 200
+
+
+@app.route('/update_coins/<int:coin_id>/<int:status>')
+@login_required
+def update_coins(coin_id, status):
+    with session_scope() as db_session:
+        Coin.update_status(db_session, coin_id, status)
+        return redirect(url_for('coins'))
+
+
+
 
 
 if __name__ == '__main__':

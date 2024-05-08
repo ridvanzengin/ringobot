@@ -1,13 +1,14 @@
 
 import time
 from ringobot.db.utils import execute_query
-from ringobot.serviceData.simulation import get_symbol_data
+from ringobot.db.tables import Coins
 from datetime import datetime, timedelta
 from ringobot.serviceData.binance import BinanceAPI
 from ringobot.serviceData.graphCreator import createGraphs
 import json
 import plotly
 
+binance = BinanceAPI()
 
 class Session:
     def __init__(self, id, coin_id, name, buy_price, quantity, buy_timestamp, status, sell_price=None, sell_timestamp=None, data=None, graph=None):
@@ -21,7 +22,7 @@ class Session:
         self.buy_time = self.buy_time_offset.strftime('%Y-%m-%d %H:%M')
         self.status = int(status)
         if self.status == 1:
-            self.live_price = BinanceAPI().get_symbol_ticker(self.name)
+            self.live_price = binance.get_symbol_ticker(self.name)
 
         self.sell_price = round(float(sell_price), 5) if sell_price else self.live_price
         self.sell_timestamp = int(sell_timestamp) if sell_timestamp else None
@@ -86,7 +87,7 @@ class Session:
 
     @staticmethod
     def get_session_data(session, data_interval="15m"):
-        session.data = get_symbol_data(session.name, data_interval, limit=240)
+        session.data = binance.get_symbol_data(session.name, interval=data_interval, limit=240)
         return session
 
     @staticmethod
@@ -128,6 +129,13 @@ class Coin:
         return coins
 
     @staticmethod
+    def update_status(db_session, coin_id, status):
+        coin = db_session.query(Coins).filter(Coins.id == coin_id).first()
+        coin.status = status
+        db_session.commit()
+        return Coin.get_coins(db_session)
+
+    @staticmethod
     def get_active_coins(db_session):
         return Coin.get_coins(db_session, status=1)
 
@@ -166,7 +174,7 @@ class Dashboard:
                           SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) as completed_session_count
                           FROM transactions;"""
         df = execute_query(query, db_session)
-        df['balance'] = BinanceAPI().get_account_balance()['USDT']
+        df['balance'] = binance.get_account_balance()['USDT']
         return Dashboard(**df.to_dict(orient='records')[0])
 
 class LiveDashboard:

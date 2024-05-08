@@ -2,7 +2,7 @@ import pandas as pd
 import gc
 from tqdm import tqdm
 import os
-from ringobot.serviceData.bulkDataImport import symbols
+from ringobot.config import train_symbols
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 import numpy as np
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     y_train_list = []
     y_test_list = []
 
-    for symbol in tqdm(symbols):
+    for symbol in tqdm(train_symbols):
         df = pd.read_parquet(f"kline_data/{symbol}/{symbol}-1h.parquet")
         X_train, X_test, y_train, y_test = preprocess_data(df, window_size, test_size, threshold, future_period, symbol)
         X_train_list.append(X_train)

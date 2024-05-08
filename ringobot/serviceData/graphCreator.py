@@ -44,7 +44,7 @@ def create_layout(xaxis_range, y_min, y_max, title=""):
             showlegend=False,
             xaxis=xaxis_range,
             yaxis=dict(
-                range=[y_min*0.9, y_max*1.1]
+                range=[y_min*0.97, y_max*1.03]
             ),
             yaxis2=dict(
                 overlaying="y",
